@@ -1,0 +1,1 @@
+# earthquake-monitoring-by-ranking
