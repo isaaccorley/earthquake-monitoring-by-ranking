@@ -4,14 +4,20 @@ import torch.nn.functional as F
 
 
 class RankLoss(nn.Module):
-    def __init__(self, margin: float):
+    def __init__(self, margin: float = 0.02):
         super().__init__()
         self.margin = margin
 
     def forward(
         self, y_pred: tuple[torch.Tensor, torch.Tensor], y_true: tuple[torch.Tensor, torch.Tensor]
     ) -> torch.Tensor:
-        device, dtype = y_pred[0].device, y_pred[0].dtype
+        device, dtype = y_pred.device, y_pred.dtype
+
+        # Split batch in half
+        b = y_pred.shape[0]
+        n = b // 2
+        y_pred = torch.split(y_pred, n, dim=0)
+        y_true = torch.split(y_true, n, dim=0)
 
         target = torch.ones_like(y_true[0]).to(device).to(dtype)
 
@@ -22,7 +28,7 @@ class RankLoss(nn.Module):
 
 
 class RegRankLoss(nn.Module):
-    def __init__(self, margin: float):
+    def __init__(self, margin: float = 0.02):
         super().__init__()
         self.reg_loss = nn.MSELoss(reduction="mean")
         self.rank_loss = RankLoss(margin)
@@ -30,8 +36,7 @@ class RegRankLoss(nn.Module):
     def forward(
         self, y_pred: tuple[torch.Tensor, torch.Tensor], y_true: tuple[torch.Tensor, torch.Tensor]
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        loss_reg = (self.reg_loss(y_pred[0], y_true[0]) + self.reg_loss(y_pred[1], y_true[1])) / 2.0
-
+        loss_reg = self.reg_loss(y_pred, y_true)
         loss_rank = self.rank_loss(y_pred, y_true)
         loss = loss_reg + loss_rank
         return loss, loss_reg, loss_rank

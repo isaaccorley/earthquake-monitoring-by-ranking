@@ -1,0 +1,25 @@
+module:
+    _target_: src.models.RegressionModule
+    image_size: ${image_size}
+    channels: 4
+    backbone: resnet18
+    pretrained: True
+    lr: 1E-4
+
+datamodule:
+    _target_: src.datasets.QuakeSetRegressionDataModule
+    root: ./data
+    batch_size: 32
+    num_workers: 16
+    image_size: ${image_size}
+
+trainer:
+    _target_: lightning.Trainer
+    max_epochs: 100
+    precision: 32-true
+    accelerator: gpu
+    log_every_n_steps: 5
+
+image_size: 512
+
+experiment_name: regression_baseline
