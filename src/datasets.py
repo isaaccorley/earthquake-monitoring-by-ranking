@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any
 
 import kornia.augmentation as K
 import torch
@@ -26,21 +26,18 @@ class QuakeSetRegressionDataModule(torchgeo.datamodules.QuakeSetDataModule):
 
     def __init__(self, *args: Any, image_size: int, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        self.val_aug = AugmentationSequential(
+            ToDecibel(),
+            # K.Normalize(mean=self.mean, std=self.std),
+            # K.Resize((image_size, image_size)),
+            data_keys=["image"],
+        )
         self.train_aug = AugmentationSequential(
-            K.Normalize(mean=self.mean, std=self.std),
+            ToDecibel(),
+            # K.Normalize(mean=self.mean, std=self.std),
             K.RandomHorizontalFlip(p=0.5),
             K.RandomVerticalFlip(p=0.5),
-            K.RandomResizedCrop((image_size, image_size), scale=(0.8, 1.0)),
-            data_keys=["image"],
-        )
-        self.val_aug = AugmentationSequential(
-            K.Normalize(mean=self.mean, std=self.std),
-            K.Resize((image_size, image_size)),
-            data_keys=["image"],
-        )
-        self.train_aug = AugmentationSequential(
-            K.Normalize(mean=self.mean, std=self.std),
-            K.Resize((image_size, image_size)),
+            # K.Resize((image_size, image_size)),
             data_keys=["image"],
         )
 
@@ -79,8 +76,8 @@ class ToDecibel(K.IntensityAugmentationBase2D):
     def apply_transform(
         self,
         input: torch.Tensor,
-        params: Dict[str, torch.Tensor],
-        flags: Dict[str, Any],
-        transform: Optional[torch.Tensor] = None,
+        params: dict[str, torch.Tensor],
+        flags: dict[str, Any],
+        transform: torch.Tensor | None = None,
     ) -> torch.Tensor:
         return 10 * torch.log10(input + 1e-9)

@@ -1,11 +1,12 @@
 import argparse
 
+import comet_ml
 import lightning
 import src  # noqa: F401
 import torch
 from hydra.utils import instantiate
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
-from lightning.pytorch.loggers import MLFlowLogger, TensorBoardLogger, WandbLogger
+from lightning.pytorch.loggers import CometLogger, MLFlowLogger, TensorBoardLogger, WandbLogger
 from omegaconf import OmegaConf
 
 
@@ -22,6 +23,13 @@ def main(args: argparse.Namespace):
     elif args.logger == "wandb":
         logger = WandbLogger(
             save_dir=args.logdir, name=config.experiment_name, log_modal="all", offline=True
+        )
+    elif args.logger == "comet":
+        logger = CometLogger(
+            project_name="earthquake-detection",
+            workspace="darthreca",
+            experiment_name=config.module.backbone,
+            save_dir="comet-logs",
         )
     else:
         logger = MLFlowLogger(
@@ -42,7 +50,10 @@ if __name__ == "__main__":
     args = argparse.ArgumentParser()
     args.add_argument("--config", type=str, help="Path to config file")
     args.add_argument(
-        "--logger", type=str, default="tensorboard", choices=["tensorboard", "mlflow", "wandb"]
+        "--logger",
+        type=str,
+        default="tensorboard",
+        choices=["tensorboard", "mlflow", "wandb", "comet"],
     )
     args.add_argument("--logdir", type=str, default="./logs", help="Location to save logs")
     args.add_argument("--device", type=int, default=0, help="GPU to use")

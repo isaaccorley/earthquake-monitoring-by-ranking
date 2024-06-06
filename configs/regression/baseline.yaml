@@ -1,24 +1,25 @@
 module:
-    _target_: src.models.RegressionModule
+    _target_: src.original_model.EarthQuakeModel
     image_size: ${image_size}
     channels: 4
-    backbone: resnet18
+    backbone: timm/convnextv2_atto
     pretrained: True
     lr: 1E-4
+    classes: 1
 
 datamodule:
     _target_: src.datasets.QuakeSetRegressionDataModule
     root: ./data
-    batch_size: 32
-    num_workers: 16
+    batch_size: 16
+    num_workers: 4
     image_size: ${image_size}
 
 trainer:
     _target_: lightning.Trainer
-    max_epochs: 100
+    max_epochs: 10
     precision: 32-true
     accelerator: gpu
-    log_every_n_steps: 5
+    log_every_n_steps: 50
 
 image_size: 512
 
