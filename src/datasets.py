@@ -41,6 +41,8 @@ class QuakeSetRegressionDataModule(torchgeo.datamodules.QuakeSetDataModule):
             data_keys=["image"],
         )
 
+        self.test_aug = AugmentationSequential(ToDecibel(), data_keys=["image"])
+
 
 class QuakeSetDataModule(torchgeo.datamodules.QuakeSetDataModule):
     min = torch.tensor([0.0, 0.0, 0.0, 0.0])

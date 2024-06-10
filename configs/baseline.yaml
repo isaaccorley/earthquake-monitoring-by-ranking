@@ -2,10 +2,11 @@ module:
     _target_: src.original_model.EarthQuakeModel
     image_size: ${image_size}
     channels: 4
-    backbone: timm/convnextv2_atto
+    backbone: timm/mobilenetv3_small_100.lamb_in1k #vit_tiny_patch16_224 #timm/levit_128s.fb_dist_in1k #mobilevitv2_100 #convnextv2_atto # mobilenetv3_small_100
     pretrained: True
     lr: 1E-4
     classes: 1
+    use_ranking: True
 
 datamodule:
     _target_: src.datasets.QuakeSetRegressionDataModule
@@ -24,3 +25,6 @@ trainer:
 image_size: 512
 
 experiment_name: regression_baseline
+logdir: ./logs
+logger: comet
+device: 0

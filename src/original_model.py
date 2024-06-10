@@ -20,6 +20,7 @@ class EarthQuakeModel(LightningModule):
         pretrained: bool = True,
         lr: float = 1e-4,
         task: str = "regression",
+        use_ranking: bool = False,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -29,9 +30,10 @@ class EarthQuakeModel(LightningModule):
         if "timm" in self.hparams["backbone"]:
             self.model = timm.create_model(
                 self.hparams["backbone"],
-                pretrained=False,
+                pretrained=pretrained,
                 num_classes=num_classes,
                 in_chans=self.hparams["channels"],
+                # img_size=image_size,
             )
         else:
             config = AutoConfig.from_pretrained(self.hparams["backbone"])
@@ -44,12 +46,14 @@ class EarthQuakeModel(LightningModule):
         self.r2_score = R2Score()
 
         self.classification_loss = nn.CrossEntropyLoss()
-        self.regression_loss = RegRankLoss()
+        self.regression_loss = nn.MSELoss() if not self.hparams["use_ranking"] else RegRankLoss()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.model(x)
         if hasattr(x, "logits"):
             x = x.logits
+        if self.hparams["task"] == "regression":
+            x = torch.clamp(x, 0, 10)
         return x.squeeze()
 
     def configure_optimizers(self):
@@ -76,7 +80,9 @@ class EarthQuakeModel(LightningModule):
         if self.hparams["task"] == "classification":
             loss = self.classification_loss(y_r, label)
         elif self.hparams["task"] == "regression":
-            loss = self.regression_loss(y_r, mag)[0]
+            loss = self.regression_loss(y_r, mag)
+            if isinstance(loss, tuple):
+                loss = loss[0]
 
         self.log("train_loss", loss)
 
@@ -88,7 +94,9 @@ class EarthQuakeModel(LightningModule):
 
         loss = 0.0
         if self.hparams["task"] == "regression":
-            loss = self.regression_loss(y_r, mag)[0]
+            loss = self.regression_loss(y_r, mag)
+            if isinstance(loss, tuple):
+                loss = loss[0]
 
             self.accuracy((y_r >= 1).to(torch.int), label)
             self.log("val_acc", self.accuracy)

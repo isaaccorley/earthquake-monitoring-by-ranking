@@ -1,6 +1,7 @@
 import argparse
 
 import comet_ml
+import hydra
 import lightning
 import src  # noqa: F401
 import torch
@@ -10,30 +11,30 @@ from lightning.pytorch.loggers import CometLogger, MLFlowLogger, TensorBoardLogg
 from omegaconf import OmegaConf
 
 
-def main(args: argparse.Namespace):
+@hydra.main(config_path="configs", config_name="baseline", version_base=None)
+def main(config):
     lightning.seed_everything(42)
     torch.set_float32_matmul_precision("medium")
 
-    config = OmegaConf.load(args.config)
     datamodule = instantiate(config.datamodule)
     model = instantiate(config.module)
 
-    if args.logger == "tensorboard":
-        logger = TensorBoardLogger(save_dir=args.logdir, name=config.experiment_name)
-    elif args.logger == "wandb":
+    if config.logger == "tensorboard":
+        logger = TensorBoardLogger(save_dir=config.logdir, name=config.experiment_name)
+    elif config.logger == "wandb":
         logger = WandbLogger(
-            save_dir=args.logdir, name=config.experiment_name, log_modal="all", offline=True
+            save_dir=config.logdir, name=config.experiment_name, log_modal="all", offline=True
         )
-    elif args.logger == "comet":
+    elif config.logger == "comet":
         logger = CometLogger(
             project_name="earthquake-detection",
             workspace="darthreca",
             experiment_name=config.module.backbone,
-            save_dir="comet-logs",
+            save_dir=config.logdir,
         )
     else:
         logger = MLFlowLogger(
-            save_dir=args.logdir, experiment_name=config.experiment_name, log_model="all"
+            save_dir=config.logdir, experiment_name=config.experiment_name, log_model="all"
         )
 
     logger.log_hyperparams(dict(config))
@@ -42,20 +43,11 @@ def main(args: argparse.Namespace):
     lr_monitor = LearningRateMonitor(logging_interval="step")
     callbacks = [checkpoint, lr_monitor]
 
-    trainer = instantiate(config.trainer, callbacks=callbacks, logger=logger, devices=[args.device])
+    trainer = instantiate(
+        config.trainer, callbacks=callbacks, logger=logger, devices=[config.device]
+    )
     trainer.fit(model, datamodule=datamodule)
 
 
 if __name__ == "__main__":
-    args = argparse.ArgumentParser()
-    args.add_argument("--config", type=str, help="Path to config file")
-    args.add_argument(
-        "--logger",
-        type=str,
-        default="tensorboard",
-        choices=["tensorboard", "mlflow", "wandb", "comet"],
-    )
-    args.add_argument("--logdir", type=str, default="./logs", help="Location to save logs")
-    args.add_argument("--device", type=int, default=0, help="GPU to use")
-    args = args.parse_args()
-    main(args)
+    main()
