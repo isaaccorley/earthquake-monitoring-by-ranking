@@ -15,7 +15,7 @@
 
 
 <p align="center">
-    <img src="./assets/samples.png" width="800"/><br/>
+    <img src="./assets/samples.png" width="700"/><br/>
     <b>Figure 1.</b> QuakeSet samples varied by earthquake magnitude. Each sample contains a pair of pre and post earthquake event Sentinel-1 (SAR) imagery containing 2 bands (VV & VH). The samples in this figure are plotted as false color images (VV, VH, VV/VH) along with their magnitudes.
 </p>
 
