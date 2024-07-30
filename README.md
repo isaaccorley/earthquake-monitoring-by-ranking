@@ -38,7 +38,7 @@ dataset = QuakeSet(root, download=True)
 
 ### Training
 
-Make sure to edit the config files in config to specify the timm backbone architecture and logger backend you desire to use. Then simply run
+Make sure to edit the config files in the `configs/` folder to specify the timm backbone architecture and logger backend you desire to use. Then simply run
 
 ```bash
 python train.py
