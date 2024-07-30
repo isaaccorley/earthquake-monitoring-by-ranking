@@ -1,2 +1,7 @@
 git+https://github.com/microsoft/torchgeo.git
 h5py
+hydra-core
+transformers
+comet-ml
+wandb
+mlflow
